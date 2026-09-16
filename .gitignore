@@ -1,2 +1,4 @@
 .DS_Store
 .smoke/
+# The generator, when built at the root of the checkout as the README suggests.
+/chart-data

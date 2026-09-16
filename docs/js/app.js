@@ -1,7 +1,7 @@
 /**
  * Everything about a release — the repositories, the version lists and the
  * chart values behind every version — is read from data/, which
- * scripts/gen-chart-data.sh generates from what the repositories publish.
+ * tools/chart-data generates from what the repositories publish.
  */
 const DATA_ROOT = "data/v1";
 

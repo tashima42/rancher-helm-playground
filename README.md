@@ -8,9 +8,22 @@ It has the following features
 * Choose the version type
 * Pick a published version from a dropdown, or type one that is not listed
 * Search the chart values by name or description
-* Choose between a first install and an upgrade with `--reuse-values`
+* Choose between a first install and an upgrade, with `--reset-then-reuse-values`
+  or `--reuse-values`
 * Pass your values as `--set` flags on the command or as a `values.yaml` file
 * Customize the rancher chart values
+
+## The site
+
+The whole site lives in `docs/`, which is what GitHub Pages is pointed at
+(Settings → Pages → deploy from a branch → `main` / `/docs`):
+
+```
+docs/index.html   the page
+docs/css/         its styles
+docs/js/app.js    all of the behaviour, no build step and no dependencies
+docs/data/        the generated chart data, plus the one file that is not
+```
 
 ## Running it locally
 
@@ -22,13 +35,14 @@ scripts/serve.sh        # http://localhost:8080
 scripts/serve.sh 3000   # or any other port
 ```
 
-Any static file server works; the script just prefers node and falls back to ruby.
+The server is rooted at `docs/`, the same as Pages. Any static file server
+works; the script just prefers node and falls back to ruby.
 
 ## Where the chart data comes from
 
-Nothing in the UI is hand-maintained. `scripts/gen-chart-data.sh` reads the
-repositories listed in `data/repos.yaml`, pulls every chart version they publish
-and writes what the page needs into `data/v1/`:
+Nothing in the UI is hand-maintained. The generator in `tools/chart-data` reads
+the repositories listed in `docs/data/repos.yaml`, pulls every chart version
+they publish and writes what the page needs into `docs/data/v1/`:
 
 | File | Contents |
 | --- | --- |
@@ -41,24 +55,42 @@ Payloads are content addressed, so the versions of a release that ship identical
 values share a single file.
 
 Every emitted file carries a `schemaVersion`, and the page refuses data it does
-not understand — bump `SCHEMA_VERSION` in the generator and `SUPPORTED_SCHEMA` in
-`js/app.js` together when the layout changes.
+not understand — bump `schemaVersion` in `tools/chart-data/main.go` and
+`SUPPORTED_SCHEMA` in `docs/js/app.js` together when the layout changes.
 
 ### Regenerating
 
+The generator is a single Go program with no runtime dependencies — it fetches
+`index.yaml` and the chart archives itself, so there is no helm, yq or jq to
+install:
+
 ```sh
-scripts/gen-chart-data.sh                 # only download versions not in the ledger
-scripts/gen-chart-data.sh --full-refresh  # ignore the ledger and redo everything
-scripts/gen-chart-data.sh --help          # --config, --out, --max-new, --jobs, --retry-missing
+go build -C tools/chart-data -o "$PWD/chart-data" .
+
+./chart-data                 # only download versions not in the ledger
+./chart-data -full-refresh   # ignore the ledger and redo everything
+./chart-data -h              # -config, -out, -max-new, -jobs, -retry-missing
 ```
+
+The default paths are relative, so run it from the root of the checkout.
 
 Versions already in `state.json` are never pulled again, so a normal run only
 costs the new ones.
 
+Or through the same image CI uses, which needs nothing but a container runtime:
+
+```sh
+docker run --rm -v "$PWD:/work" ghcr.io/tashima42/rancher-helm-playground/chart-data:latest
+```
+
 ### In CI
 
-`.github/workflows/update-chart-data.yml` runs the generator daily and commits
-what changed. It is reusable — call it from another workflow with:
+`.github/workflows/publish-chart-data-image.yml` builds `tools/chart-data` into
+`ghcr.io/tashima42/rancher-helm-playground/chart-data` whenever the generator
+changes.
+
+`.github/workflows/update-chart-data.yml` pulls that image, runs it daily and
+commits what changed. It is reusable — call it from another workflow with:
 
 ```yaml
 jobs:

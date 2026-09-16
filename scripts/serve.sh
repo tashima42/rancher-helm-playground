@@ -2,23 +2,25 @@
 #
 # Serves the playground for local development on http://localhost:8080.
 #
-# The page loads data/ with fetch, which browsers block on file://, so it has to
-# be served over http even though it is a plain static site.
+# docs/ is what GitHub Pages publishes, so that is the directory served here
+# too. The page loads data/ with fetch, which browsers block on file://, so it
+# has to be served over http even though it is a plain static site.
 #
 # Usage: scripts/serve.sh [port]
 
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+site_root="$repo_root/docs"
 port="${1:-8080}"
 
 if command -v node >/dev/null; then
-  exec node "$repo_root/scripts/serve.mjs" "$repo_root" "$port"
+  exec node "$repo_root/scripts/serve.mjs" "$site_root" "$port"
 fi
 
 if command -v ruby >/dev/null; then
-  echo "serving $repo_root on http://localhost:$port" >&2
-  exec ruby -run -e httpd -- --port "$port" --bind-address 127.0.0.1 "$repo_root"
+  echo "serving $site_root on http://localhost:$port" >&2
+  exec ruby -run -e httpd -- --port "$port" --bind-address 127.0.0.1 "$site_root"
 fi
 
 echo "error: need node or ruby to serve the site; any static file server works" >&2

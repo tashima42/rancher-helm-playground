@@ -1,4 +1,5 @@
-// Static file server for local development.
+// Static file server for local development, rooted at the directory GitHub
+// Pages publishes.
 //
 // The page reads data/ with fetch, which browsers refuse to do on file://, so
 // opening index.html directly no longer works. Started by scripts/serve.sh.

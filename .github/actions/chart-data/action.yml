@@ -2,20 +2,25 @@
 name: Generate chart data
 description: >-
   Builds the playground's chart data from the helm repositories listed in a
-  config file. Only versions the ledger has never seen are downloaded, so a
-  scheduled run costs one index.yaml fetch per repository.
+  config file, by running the published chart-data image. Only versions the
+  ledger has never seen are downloaded, so a scheduled run costs one index.yaml
+  fetch per repository.
 
 inputs:
   config:
     description: Repository config to read.
     required: false
-    default: data/repos.yaml
+    default: docs/data/repos.yaml
   out-dir:
     description: Directory to write the generated data to.
     required: false
-    default: data/v1
+    default: docs/data/v1
   full-refresh:
     description: Ignore the ledger and rebuild every version.
+    required: false
+    default: 'false'
+  retry-missing:
+    description: Look again for versions recorded as no longer hosted.
     required: false
     default: 'false'
   max-new:
@@ -26,14 +31,16 @@ inputs:
     description: Parallel chart downloads.
     required: false
     default: '8'
-  helm-version:
-    description: helm version to install.
+  image:
+    description: Generator image to run.
     required: false
-    default: v3.19.0
-  yq-version:
-    description: yq version to install when the runner has none.
+    default: ghcr.io/tashima42/rancher-helm-playground/chart-data:latest
+  registry-token:
+    description: >-
+      Token to read the image with. Only needed while the package is private;
+      pass secrets.GITHUB_TOKEN from a job with packages:read.
     required: false
-    default: v4.44.3
+    default: ''
 
 outputs:
   changed:
@@ -46,50 +53,49 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Install helm
-      uses: azure/setup-helm@v4
-      with:
-        version: ${{ inputs.helm-version }}
-
-    - name: Install yq
+    - name: Log in to the registry
+      if: inputs.registry-token != ''
       shell: bash
       env:
-        YQ_VERSION: ${{ inputs.yq-version }}
+        IMAGE: ${{ inputs.image }}
+        TOKEN: ${{ inputs.registry-token }}
+        ACTOR: ${{ github.actor }}
       run: |
         set -euo pipefail
-        command -v jq >/dev/null || { echo "::error::jq is required"; exit 1; }
-        if command -v yq >/dev/null; then
-          exit 0
-        fi
-        mkdir -p "$RUNNER_TEMP/bin"
-        curl -fsSL -o "$RUNNER_TEMP/bin/yq" \
-          "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
-        chmod +x "$RUNNER_TEMP/bin/yq"
-        echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+        registry="${IMAGE%%/*}"
+        printf '%s' "$TOKEN" | docker login "$registry" --username "$ACTOR" --password-stdin
+
+    - name: Pull the generator
+      shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
+      run: docker pull --quiet "$IMAGE"
 
     - name: Generate
       id: generate
       shell: bash
       env:
+        IMAGE: ${{ inputs.image }}
         CONFIG: ${{ inputs.config }}
         OUT_DIR: ${{ inputs.out-dir }}
         FULL_REFRESH: ${{ inputs.full-refresh }}
+        RETRY_MISSING: ${{ inputs.retry-missing }}
         MAX_NEW: ${{ inputs.max-new }}
         JOBS: ${{ inputs.jobs }}
-        ACTION_PATH: ${{ github.action_path }}
       run: |
         set -euo pipefail
 
         args=(--config "$CONFIG" --out "$OUT_DIR" --max-new "$MAX_NEW" --jobs "$JOBS")
         [ "$FULL_REFRESH" = "true" ] && args+=(--full-refresh)
+        [ "$RETRY_MISSING" = "true" ] && args+=(--retry-missing)
 
-        # The action ships next to the script when used from this repository;
-        # fall back to the checkout when it is used from another one.
-        script="$ACTION_PATH/../../../scripts/gen-chart-data.sh"
-        [ -f "$script" ] || script="scripts/gen-chart-data.sh"
-        [ -f "$script" ] || { echo "::error::gen-chart-data.sh not found"; exit 1; }
-
-        bash "$script" "${args[@]}"
+        # As the runner's own user, so the generated files belong to whoever
+        # commits them rather than to root.
+        docker run --rm \
+          --user "$(id -u):$(id -g)" \
+          --volume "$PWD:/work" \
+          --workdir /work \
+          "$IMAGE" "${args[@]}"
 
         versions=$(jq '.entries | length' "$OUT_DIR/state.json")
         echo "versions=$versions" >> "$GITHUB_OUTPUT"

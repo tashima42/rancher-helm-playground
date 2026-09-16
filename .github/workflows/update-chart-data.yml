@@ -1,8 +1,8 @@
 ---
 name: Update chart data
 
-# Refreshes data/v1 from the chart repositories. Versions already in the ledger
-# are never downloaded again, so the daily run is cheap.
+# Refreshes docs/data/v1 from the chart repositories. Versions already in the
+# ledger are never downloaded again, so the daily run is cheap.
 on:
   schedule:
     - cron: '17 6 * * *'
@@ -10,6 +10,11 @@ on:
     inputs:
       full-refresh:
         description: Ignore the ledger and rebuild every version.
+        type: boolean
+        required: false
+        default: false
+      retry-missing:
+        description: Look again for versions recorded as no longer hosted.
         type: boolean
         required: false
         default: false
@@ -26,6 +31,11 @@ on:
         type: boolean
         required: false
         default: false
+      retry-missing:
+        description: Look again for versions recorded as no longer hosted.
+        type: boolean
+        required: false
+        default: false
       max-new:
         description: Stop after this many downloads (0 means no limit).
         type: number
@@ -35,12 +45,12 @@ on:
         description: Repository config to read.
         type: string
         required: false
-        default: data/repos.yaml
+        default: docs/data/repos.yaml
       out-dir:
         description: Directory to write the generated data to.
         type: string
         required: false
-        default: data/v1
+        default: docs/data/v1
 
 permissions:
   contents: read
@@ -54,6 +64,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Reading the generator image from ghcr.io.
+      packages: read
     steps:
       - uses: actions/checkout@v4
 
@@ -61,15 +73,17 @@ jobs:
         id: data
         uses: ./.github/actions/chart-data
         with:
-          config: ${{ inputs.config || 'data/repos.yaml' }}
-          out-dir: ${{ inputs.out-dir || 'data/v1' }}
+          config: ${{ inputs.config || 'docs/data/repos.yaml' }}
+          out-dir: ${{ inputs.out-dir || 'docs/data/v1' }}
           full-refresh: ${{ inputs.full-refresh && 'true' || 'false' }}
+          retry-missing: ${{ inputs.retry-missing && 'true' || 'false' }}
           max-new: ${{ inputs.max-new || 0 }}
+          registry-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit
         if: steps.data.outputs.changed == 'true'
         env:
-          OUT_DIR: ${{ inputs.out-dir || 'data/v1' }}
+          OUT_DIR: ${{ inputs.out-dir || 'docs/data/v1' }}
           VERSIONS: ${{ steps.data.outputs.versions }}
         run: |
           set -euo pipefail

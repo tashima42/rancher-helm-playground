@@ -1,0 +1,77 @@
+---
+name: Publish chart-data image
+
+# Builds tools/chart-data into the image the update workflow pulls. Only pushed
+# from main: a pull request build just proves the Dockerfile still works.
+on:
+  push:
+    branches: [main]
+    paths:
+      - tools/chart-data/**
+      - .github/workflows/publish-chart-data-image.yml
+  pull_request:
+    paths:
+      - tools/chart-data/**
+      - .github/workflows/publish-chart-data-image.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-chart-data-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image name
+        id: image
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Registry paths are lowercase; a repository name need not be.
+          name="ghcr.io/$(echo "$REPOSITORY" | tr '[:upper:]' '[:lower:]')/chart-data"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ghcr.io
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=long
+          labels: |
+            org.opencontainers.image.title=chart-data
+            org.opencontainers.image.description=Generates the Rancher Helm Playground chart data
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: tools/chart-data
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
