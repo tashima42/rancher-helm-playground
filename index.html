@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rancher Helm Playground</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>Rancher Helm Playground</h1>
+      <p>
+        Customize Rancher Helm chart values and generate a helm command or a
+        <code>values.yaml</code> file to deploy Rancher easily.
+      </p>
+    </header>
+
+    <main class="layout">
+      <form id="config" class="panel" autocomplete="off">
+        <fieldset>
+          <legend>Distribution</legend>
+          <div class="choices" id="distribution-choices"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Version type</legend>
+          <div class="choices" id="version-type-choices"></div>
+          <p class="hint" id="version-type-hint"></p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Version</legend>
+          <label class="field">
+            <span>Chart version</span>
+            <input type="text" id="version" name="version" spellcheck="false" />
+          </label>
+          <p class="hint" id="chart-hint"></p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Release</legend>
+          <label class="field">
+            <span>Release name</span>
+            <input type="text" id="release-name" name="release-name" value="rancher" spellcheck="false" />
+          </label>
+          <label class="field">
+            <span>Namespace</span>
+            <input type="text" id="namespace" name="namespace" value="cattle-system" spellcheck="false" />
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>
+            Chart values
+            <button type="button" id="reset-values" class="link-button" hidden>Reset</button>
+          </legend>
+          <p class="hint" id="values-summary"></p>
+          <div class="fields" id="common-fields"></div>
+          <div id="value-groups"></div>
+        </fieldset>
+      </form>
+
+      <section class="panel output" aria-live="polite">
+        <article class="card">
+          <header class="card-header">
+            <h2>Chart repo</h2>
+            <button type="button" class="copy" data-copy-target="chart-repo">Copy</button>
+          </header>
+          <pre id="chart-repo" class="code"></pre>
+        </article>
+
+        <article class="card">
+          <header class="card-header">
+            <h2>Helm command</h2>
+            <button type="button" class="copy" data-copy-target="helm-command">Copy</button>
+          </header>
+          <pre id="helm-command" class="code"></pre>
+        </article>
+
+        <article class="card">
+          <header class="card-header">
+            <h2><code>values.yaml</code></h2>
+            <button type="button" class="copy" data-copy-target="values-yaml">Copy</button>
+          </header>
+          <pre id="values-yaml" class="code"></pre>
+        </article>
+      </section>
+    </main>
+
+    <script src="js/data.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
