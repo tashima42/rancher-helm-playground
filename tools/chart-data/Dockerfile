@@ -22,6 +22,10 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
 
 FROM registry.suse.com/bci/bci-nano:16.0
 
+LABEL org.opencontainers.image.title="chart-data" \
+      org.opencontainers.image.description="Generates the Rancher Helm Playground chart data" \
+      org.opencontainers.image.source="https://github.com/tashima42/rancher-helm-playground"
+
 COPY --from=build /out/chart-data /usr/local/bin/chart-data
 
 # The repository is mounted here, so the default arguments resolve the same way

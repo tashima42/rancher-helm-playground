@@ -43,6 +43,7 @@ type options struct {
 	retryMissing bool
 	maxNew       int
 	jobs         int
+	version      bool
 }
 
 func main() {
@@ -56,7 +57,14 @@ func main() {
 	flag.BoolVar(&opts.retryMissing, "retry-missing", false, "look again for versions recorded as no longer hosted")
 	flag.IntVar(&opts.maxNew, "max-new", 0, "stop after this many downloads, so a bootstrap can be split up")
 	flag.IntVar(&opts.jobs, "jobs", 8, "parallel chart downloads")
+	flag.BoolVar(&opts.version, "version", false, "print what this build writes and exit")
 	flag.Parse()
+
+	if opts.version {
+		// Which build produced a data directory, without having to run one.
+		fmt.Printf("chart-data generator %d, schema %d\n", generator, schemaVersion)
+		return
+	}
 
 	if err := run(opts); err != nil {
 		log.Fatalf("error: %v", err)

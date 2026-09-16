@@ -1,0 +1,54 @@
+---
+name: Pull request
+
+# What every change to the generator has to pass. Nothing here publishes: the
+# image is built to prove the Dockerfile still works, and thrown away.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pull-request-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Test the generator
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # reads the generator source
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: tools/chart-data/go.mod
+          cache-dependency-path: tools/chart-data/go.sum
+
+      - run: make vet
+
+      - run: make test
+
+  image:
+    name: Build the image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # reads the Dockerfile and the generator source
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The same target the release builds from, so a PR proves the command
+      # that publishes still works.
+      - name: Build
+        env:
+          IMAGE: chart-data:pr
+        run: make image
+
+      - name: Check it runs
+        run: docker run --rm chart-data:pr -version

@@ -33,10 +33,10 @@ inputs:
     default: '8'
   image:
     description: >-
-      Generator image to run. `edge` is whatever main last built; a release tag
-      (`:v1.2.0`) pins one build.
+      Generator image to run. Only release tags are published, so this names one
+      build and never moves; bump it when a new generator is tagged.
     required: false
-    default: ghcr.io/tashima42/rancher-helm-playground/chart-data:edge
+    default: ghcr.io/tashima42/rancher-helm-playground/chart-data:v0.1.0
   registry-token:
     description: >-
       Token to read the image with. Only needed while the package is private;

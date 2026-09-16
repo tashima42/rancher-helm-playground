@@ -1,8 +1,8 @@
 ---
 # The chart repositories the playground offers.
 #
-# This file is the only hand-maintained input: scripts/gen-chart-data.sh reads
-# it and writes everything under data/ from what the repositories publish.
+# This file is the only hand-maintained input: tools/chart-data reads it and
+# writes everything under docs/data/v1/ from what the repositories publish.
 #
 # Channels are matched in order. The first channel whose `match` regex accepts a
 # chart version claims it, so a version is only ever downloaded once per

@@ -65,39 +65,40 @@ The generator is a single Go program with no runtime dependencies — it fetches
 install:
 
 ```sh
-go build -C tools/chart-data -o "$PWD/chart-data" .
+make generate   # builds ./chart-data and refreshes docs/data
+make image-run  # the same, through the container image
+```
 
+Or drive the binary yourself, from the root of the checkout because the default
+paths are relative:
+
+```sh
+make build
 ./chart-data                 # only download versions not in the ledger
 ./chart-data -full-refresh   # ignore the ledger and redo everything
 ./chart-data -h              # -config, -out, -max-new, -jobs, -retry-missing
 ```
 
-The default paths are relative, so run it from the root of the checkout.
-
 Versions already in `state.json` are never pulled again, so a normal run only
 costs the new ones.
 
-Or through the same image CI uses, which needs nothing but a container runtime:
-
-```sh
-docker run --rm -v "$PWD:/work" ghcr.io/tashima42/rancher-helm-playground/chart-data:latest
-```
+`make help` lists the rest: `test`, `vet`, `image`, `image-push`, `serve` and
+`lint` (actionlint and zizmor over `.github/`).
 
 ### In CI
 
-The generator ships as `ghcr.io/tashima42/rancher-helm-playground/chart-data`:
-
-| Workflow | Trigger | Tags it publishes |
+| Workflow | Trigger | What it does |
 | --- | --- | --- |
-| `release.yml` | a `v*` tag | that exact tag, e.g. `v1.2.0` |
-| `publish-chart-data-image.yml` | a push to main touching `tools/chart-data/` | `edge`, `sha-<commit>` |
+| `pull-request.yml` | a pull request | `make vet`, `make test`, and `make image` to prove the build |
+| `release.yml` | a `v*` tag | `make image-push` to `ghcr.io/tashima42/rancher-helm-playground/chart-data:<tag>` |
+| `update-chart-data.yml` | daily, or called | runs the published image and commits what changed |
+| `zizmor.yml` | push and pull request | audits the workflows themselves |
 
-So cutting a release is `git tag v1.2.0 && git push origin v1.2.0`. No floating
-`latest`, `1.2` or `1` tag is published, so an image tag always names one build.
+CI builds the image with the same `make` targets a laptop does. Only the exact
+tag pushed is published — no `latest`, `1.2` or `1` — so an image tag always
+names one build, and the update workflow pins the one it runs.
 
-`.github/workflows/update-chart-data.yml` runs the generator daily and commits
-what changed. It pulls `edge`; pass `image:` to the action to pin a release
-instead. It is reusable — call it from another workflow with:
+`update-chart-data.yml` is reusable — call it from another workflow with:
 
 ```yaml
 jobs:
