@@ -5188,6 +5188,10 @@
       "chart": "125f23a4a3595e004e25ce1f5d3609a57a245f04eb012b3a521cbd695bb20472",
       "digest": "fd0bb8ca928ec54c5e9cb875091260251763818cc5b19a79bfbb0927cf33ac85"
     },
+    "prime/2.12.14-a6ee0ee-head": {
+      "chart": "fe59fcd9a143f985fd1f3db86e420649b757c8146e4f1763614dd70915edadc6",
+      "digest": "8c0ae325ced08349502719d21353fd3ac5a0d2ebcb97206a28e2dd1d23bb1db0"
+    },
     "prime/2.12.14-aa3f6c4-head": {
       "chart": "125f23a4a3595e004e25ce1f5d3609a57a245f04eb012b3a521cbd695bb20472",
       "digest": "5da4fbefcd0f62daf614e007a14facb9a6793035f76382b8d4557b227b62772a"
@@ -5371,6 +5375,10 @@
     "prime/2.13.10-2a3f4a4-head": {
       "chart": "df090f42242775fb60306f88ff92adc241685dc4c8c940f7c4f44d9682a611c1",
       "digest": "403aa2341b8f6903c87b9c74a0a33a065698b54897a7ea766c3a887157b91bb4"
+    },
+    "prime/2.13.10-5df1219-head": {
+      "chart": "f957c89eeca3375305c3de50452f650c1651b8db009127e731b1d2c118331cc6",
+      "digest": "5eb7c65494fc7ba5d7809d4e3d89056e2d147f48e7b20c508792e8e333185e4a"
     },
     "prime/2.13.10-72cf83e-head": {
       "chart": "df090f42242775fb60306f88ff92adc241685dc4c8c940f7c4f44d9682a611c1",
@@ -5896,6 +5904,10 @@
       "chart": "94d5012d785bc42cb29149ae8fba42c24d63466586878cb327f0067caa5c0ba7",
       "digest": "72a96cfc57e83419c56c223110dc885886ebf6ef2d669cc42bd1de909c29edfd"
     },
+    "prime/2.14.6-ae5578b-head": {
+      "chart": "d492ff4e660cf757728ae162373588a1e5040b78ab26711f8b2c44fcf0ea6bbc",
+      "digest": "6b4ca4a45a8e0ad8efa66694974322c07329f0495cf8d4d757c75d0858761fd3"
+    },
     "prime/2.15.0-alpha1": {
       "chart": "e6949dcdd7c543f5335b6d7353828c710d849829f928c5d628b0bc08b37da0d4",
       "digest": "63024ecee5e0cdc483f2e2c21fbec95b09a15c0c8ca370d113bdc2d64bffa41e"
@@ -6012,6 +6024,10 @@
       "chart": "862b3634462b29d7e0e7e72eb8b4e09f14f74fd38768a5f06c50134eb80a5322",
       "digest": "c24ff84a3cf2a90d04ca1f068097729d6bc12df00d9e0e3a2aa788fddce442e2"
     },
+    "prime/2.15.2-f01b39f-head": {
+      "chart": "43ccf6b793fab191ccff11b6d0535e2f501678f7d39b2d0ec49b5a7103573de2",
+      "digest": "f2270125b4343c97f9d22c643c6ccdf96bbd45089d1a6337afeefbb567cb6e70"
+    },
     "prime/2.16.0-099f261-head": {
       "chart": "769e3291a1c4677f51e3c5902c6b56343d48ab7dbc4ec8203d73c38a81eb1fb2",
       "digest": "bd69973809c289d08c3ea45bf39697b1e0bd0c55992947fa85d838153b6b68ba"
@@ -6019,6 +6035,10 @@
     "prime/2.16.0-134b3d8-head": {
       "chart": "476259903f09ad6d49d9bd6290cc8b259350683e00961dd1c961367ad64e7ea3",
       "digest": "4c9d397ed94c365d448b3fca6dad5d1a57ec0b4f7439bf133053ca12be91966a"
+    },
+    "prime/2.16.0-622b935-head": {
+      "chart": "769e3291a1c4677f51e3c5902c6b56343d48ab7dbc4ec8203d73c38a81eb1fb2",
+      "digest": "8fc8c737c00a7f067e333b8918856414218588a614942ef4569580889c55ff91"
     },
     "prime/2.16.0-8789bd5-head": {
       "chart": "476259903f09ad6d49d9bd6290cc8b259350683e00961dd1c961367ad64e7ea3",
