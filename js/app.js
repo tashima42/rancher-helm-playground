@@ -30,20 +30,36 @@ const DEFAULT_SELECTION = { distribution: "prime", versionType: "head" };
 const DEFAULT_RELEASE_NAME = "rancher";
 const DEFAULT_NAMESPACE = "cattle-system";
 
-/** First install versus upgrading a release that is already running. */
+/**
+ * First install versus upgrading a release that is already running, and — for an
+ * upgrade — what happens to the values the release already has. `flags` are added
+ * to the command as written.
+ */
 const ACTIONS = [
   {
     id: "install",
     label: "Install or upgrade",
-    hint: "helm upgrade --install creates the release if it is missing and creates the namespace.",
+    flags: ["--create-namespace"],
+    hint: "helm upgrade --install creates the release if it is missing, and creates the namespace.",
   },
   {
     id: "upgrade",
-    label: "Upgrade an existing release",
-    hint: "Adds --reuse-values, so the values the release was installed with are kept and only the ones below are changed.",
+    label: "Upgrade, taking the new chart defaults",
+    flags: ["--reset-then-reuse-values"],
+    hint: "Adds --reset-then-reuse-values: the new chart's defaults are applied first, then the values you set on the running release, then the ones below. Needs Helm 3.14 or newer.",
+  },
+  {
+    id: "upgrade-reuse",
+    label: "Upgrade, keeping the installed values",
+    flags: ["--reuse-values"],
+    hint: "Adds --reuse-values: the running release's values are carried over as they are, so defaults introduced by a newer chart are not picked up.",
   },
 ];
 const DEFAULT_ACTION = "install";
+
+function currentAction() {
+  return ACTIONS.find((action) => action.id === state.action) || ACTIONS[0];
+}
 
 /** Whether the changed values travel in a file or on the command line. */
 const VALUES_MODES = [
@@ -649,7 +665,7 @@ async function renderForm() {
     })),
     selectAction,
   );
-  el.actionHint.textContent = ACTIONS.find((action) => action.id === state.action)?.hint || "";
+  el.actionHint.textContent = currentAction().hint;
 
   renderChoices(
     el.valuesModeChoices,
@@ -807,7 +823,7 @@ function selectVersionType(versionType) {
 /** Neither of these changes which chart is loaded, so only the output redraws. */
 function selectAction(action) {
   state.action = action;
-  el.actionHint.textContent = ACTIONS.find((item) => item.id === action)?.hint || "";
+  el.actionHint.textContent = currentAction().hint;
   renderOutput();
 }
 
@@ -875,15 +891,13 @@ function buildHelmCommand(chartRepo, split) {
   const version = normalizedVersion() || state.entry?.version || "";
   const name = state.releaseName || DEFAULT_RELEASE_NAME;
   const chart = `${alias}/${data.index.chart}`;
-  const upgrade = state.action === "upgrade";
+  const action = currentAction();
 
-  const command = upgrade
-    ? [`helm upgrade ${name} ${chart}`, `--namespace ${state.namespace || DEFAULT_NAMESPACE}`, "--reuse-values"]
-    : [
-        `helm upgrade --install ${name} ${chart}`,
-        `--namespace ${state.namespace || DEFAULT_NAMESPACE}`,
-        "--create-namespace",
-      ];
+  const command = [
+    action.id === "install" ? `helm upgrade --install ${name} ${chart}` : `helm upgrade ${name} ${chart}`,
+    `--namespace ${state.namespace || DEFAULT_NAMESPACE}`,
+    ...action.flags,
+  ];
 
   if (version) command.push(`--version ${version}`);
   if (channelFor(state.distribution, state.versionType)?.devel) command.push("--devel");
