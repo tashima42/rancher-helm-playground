@@ -46,6 +46,10 @@
         <fieldset>
           <legend>Release</legend>
           <label class="field">
+            <span>Helm repo name</span>
+            <input type="text" id="repo-name" name="repo-name" spellcheck="false" />
+          </label>
+          <label class="field">
             <span>Release name</span>
             <input type="text" id="release-name" name="release-name" value="rancher" spellcheck="false" />
           </label>
@@ -79,7 +83,6 @@
         <fieldset>
           <legend>
             Chart values
-            <button type="button" id="copy-link" class="link-button">Copy link</button>
             <button type="button" id="reset-values" class="link-button" hidden>Reset</button>
           </legend>
           <input
@@ -97,12 +100,24 @@
       </form>
 
       <section class="panel output" aria-live="polite">
+        <div class="output-actions">
+          <button type="button" id="copy-link" class="link-button">Copy link to this configuration</button>
+        </div>
+
         <article class="card">
           <header class="card-header">
             <h2>Chart repo</h2>
             <button type="button" class="copy" data-copy-target="chart-repo">Copy</button>
           </header>
           <pre id="chart-repo" class="code"></pre>
+        </article>
+
+        <article class="card">
+          <header class="card-header">
+            <h2>Add the repo</h2>
+            <button type="button" class="copy" data-copy-target="repo-command">Copy</button>
+          </header>
+          <pre id="repo-command" class="code"></pre>
         </article>
 
         <article class="card">

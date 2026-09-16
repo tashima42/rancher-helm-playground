@@ -100,6 +100,7 @@ const URL_KEYS = {
   namespace: "namespace",
   action: "action",
   valuesMode: "values",
+  repoName: "repo",
   // Repeated once per pair, as `env=NAME=VALUE`.
   extraEnv: "env",
 };
@@ -107,6 +108,9 @@ const OVERRIDE_PREFIX = "v.";
 
 /** The version dropdown entry that reveals the free-text version field. */
 const CUSTOM_VERSION = "__custom__";
+
+/** Restored after the button briefly reports what the click did. */
+const COPY_LINK_LABEL = "Copy link to this configuration";
 
 const state = {
   distribution: null,
@@ -119,6 +123,8 @@ const state = {
   entry: null,
   /** Values, README options and values schema for that entry. */
   chart: null,
+  /** Helm repo alias; empty means the one derived from the selection. */
+  repoName: "",
   releaseName: "rancher",
   namespace: "cattle-system",
   /** "install" or "upgrade"; see ACTIONS. */
@@ -162,6 +168,7 @@ const el = {
   customVersion: document.getElementById("custom-version"),
   version: document.getElementById("version"),
   chartHint: document.getElementById("chart-hint"),
+  repoName: document.getElementById("repo-name"),
   releaseName: document.getElementById("release-name"),
   namespace: document.getElementById("namespace"),
   actionChoices: document.getElementById("action-choices"),
@@ -178,6 +185,7 @@ const el = {
   resetValues: document.getElementById("reset-values"),
   copyLink: document.getElementById("copy-link"),
   chartRepo: document.getElementById("chart-repo"),
+  repoCommand: document.getElementById("repo-command"),
   helmCommand: document.getElementById("helm-command"),
   valuesYaml: document.getElementById("values-yaml"),
   banner: document.getElementById("banner"),
@@ -268,9 +276,17 @@ async function refreshChart() {
   normalizeOverrides();
 }
 
-/** Helm repo alias, unique per distribution + version type pair. */
-function repoAlias() {
+/**
+ * Unique per distribution + version type pair, so adding one repo never
+ * replaces another already on the machine.
+ */
+function defaultRepoAlias() {
   return `rancher-${state.distribution}-${state.versionType}`;
+}
+
+/** The alias the commands use: whatever was typed, or the derived one. */
+function repoAlias() {
+  return state.repoName.trim() || defaultRepoAlias();
 }
 
 function normalizedVersion() {
@@ -744,6 +760,10 @@ async function renderForm() {
   const channel = channelFor(state.distribution, state.versionType);
   el.versionTypeHint.textContent = channel?.hint || "";
 
+  // Left as a placeholder rather than a value: the derived alias follows the
+  // selection, and only a name that was actually typed should outlive it.
+  el.repoName.placeholder = defaultRepoAlias();
+
   renderChoices(
     el.actionChoices,
     "action",
@@ -1080,18 +1100,22 @@ function extraEnvFlags(entries) {
   );
 }
 
-function buildHelmCommand(chartRepo, split) {
-  const alias = repoAlias();
+/** Registering the repo, which only has to happen once per machine. */
+function buildRepoCommand(chartRepo) {
+  return [`helm repo add ${shellQuote(repoAlias())} ${chartRepo}`, "helm repo update"].join("\n");
+}
+
+function buildHelmCommand(split) {
   // Pinned even on "latest": the command should install the version whose values
   // the form is showing, not whatever the repo happens to resolve to later.
   const version = normalizedVersion() || state.entry?.version || "";
-  const name = state.releaseName || DEFAULT_RELEASE_NAME;
-  const chart = `${alias}/${data.index.chart}`;
+  const name = shellQuote(state.releaseName || DEFAULT_RELEASE_NAME);
+  const chart = shellQuote(`${repoAlias()}/${data.index.chart}`);
   const action = currentAction();
 
   const command = [
     action.id === "install" ? `helm upgrade --install ${name} ${chart}` : `helm upgrade ${name} ${chart}`,
-    `--namespace ${state.namespace || DEFAULT_NAMESPACE}`,
+    `--namespace ${shellQuote(state.namespace || DEFAULT_NAMESPACE)}`,
     ...action.flags,
   ];
 
@@ -1101,12 +1125,7 @@ function buildHelmCommand(chartRepo, split) {
   split.set.forEach((field) => command.push(setFlag(field)));
   command.push(...extraEnvFlags(split.setEnv));
 
-  return [
-    `helm repo add ${alias} ${chartRepo}`,
-    "helm repo update",
-    "",
-    command.join(" \\\n  "),
-  ].join("\n");
+  return command.join(" \\\n  ");
 }
 
 function setCode(node, text, emptyText) {
@@ -1121,6 +1140,7 @@ function renderOutput() {
 
   if (!channel) {
     setCode(el.chartRepo, "", "No chart repo published for this combination.");
+    setCode(el.repoCommand, "", "Nothing to add.");
     setCode(el.helmCommand, "", "Pick an available distribution and version type.");
     setCode(el.valuesYaml, "", "# nothing to generate");
     return;
@@ -1130,7 +1150,8 @@ function renderOutput() {
   const split = splitValues(fields, extraEnvEntries());
 
   setCode(el.chartRepo, channel.repo, "");
-  setCode(el.helmCommand, buildHelmCommand(channel.repo, split), "");
+  setCode(el.repoCommand, buildRepoCommand(channel.repo), "");
+  setCode(el.helmCommand, buildHelmCommand(split), "");
   setCode(
     el.valuesYaml,
     needsValuesFile(split) ? buildValuesYaml(split.file, split.fileEnv) : "",
@@ -1190,7 +1211,7 @@ function readUrlIntoState() {
     )?.id;
   }
 
-  ["version", "releaseName", "namespace"].forEach((key) => {
+  ["version", "repoName", "releaseName", "namespace"].forEach((key) => {
     const value = params.get(URL_KEYS[key]);
     if (value !== null) state[key] = value;
   });
@@ -1219,6 +1240,7 @@ function readUrlIntoState() {
   });
 
   el.version.value = state.version;
+  el.repoName.value = state.repoName;
   el.releaseName.value = state.releaseName;
   el.namespace.value = state.namespace;
 }
@@ -1234,6 +1256,7 @@ function currentUrl() {
   params.set(URL_KEYS.versionType, state.versionType);
 
   if (state.version.trim()) params.set(URL_KEYS.version, state.version.trim());
+  if (state.repoName.trim()) params.set(URL_KEYS.repoName, state.repoName.trim());
   if (state.releaseName !== DEFAULT_RELEASE_NAME) params.set(URL_KEYS.releaseName, state.releaseName);
   if (state.namespace !== DEFAULT_NAMESPACE) params.set(URL_KEYS.namespace, state.namespace);
   if (state.action !== DEFAULT_ACTION) params.set(URL_KEYS.action, state.action);
@@ -1344,6 +1367,7 @@ function bindEvents() {
     typing = setTimeout(update, 400);
   });
 
+  bindInput(el.repoName, "repoName");
   bindInput(el.releaseName, "releaseName");
   bindInput(el.namespace, "namespace");
   bindCopyButtons();
@@ -1373,7 +1397,7 @@ function bindEvents() {
     const copied = await copyText(window.location.href);
     el.copyLink.textContent = copied ? "Copied" : "Failed";
     setTimeout(() => {
-      el.copyLink.textContent = "Copy link";
+      el.copyLink.textContent = COPY_LINK_LABEL;
     }, 1500);
   });
 

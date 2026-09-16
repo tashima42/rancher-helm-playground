@@ -456,6 +456,17 @@ legend {
   text-decoration: underline;
 }
 
+/* Sits above the first card, so sharing is a page action rather than something
+   tucked into the values form. */
+.output-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.output-actions .link-button {
+  margin-left: 0;
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
