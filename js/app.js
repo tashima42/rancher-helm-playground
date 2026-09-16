@@ -83,6 +83,22 @@ const ROOT_GROUP = "general";
 /** Selected on load, falling back to whatever the data offers. */
 const DEFAULT_SELECTION = { distribution: "prime", versionType: "head" };
 
+const DEFAULT_RELEASE_NAME = "rancher";
+const DEFAULT_NAMESPACE = "cattle-system";
+
+/**
+ * Query parameter names. Changed chart values are stored one per parameter,
+ * prefixed so they cannot collide with the keys below: `v.ingress.tls.source=secret`.
+ */
+const URL_KEYS = {
+  distribution: "distribution",
+  versionType: "type",
+  version: "version",
+  releaseName: "release",
+  namespace: "namespace",
+};
+const OVERRIDE_PREFIX = "v.";
+
 const state = {
   distribution: null,
   versionType: null,
@@ -108,6 +124,7 @@ const el = {
   valueGroups: document.getElementById("value-groups"),
   valuesSummary: document.getElementById("values-summary"),
   resetValues: document.getElementById("reset-values"),
+  copyLink: document.getElementById("copy-link"),
   chartRepo: document.getElementById("chart-repo"),
   helmCommand: document.getElementById("helm-command"),
   valuesYaml: document.getElementById("values-yaml"),
@@ -614,12 +631,14 @@ function selectDistribution(distribution) {
   if (!isAvailable(distribution, state.versionType)) {
     state.versionType = versionTypes().find((type) => isAvailable(distribution, type));
   }
+  normalizeOverrides();
   renderForm();
   renderOutput();
 }
 
 function selectVersionType(versionType) {
   state.versionType = versionType;
+  normalizeOverrides();
   renderForm();
   renderOutput();
 }
@@ -629,8 +648,8 @@ function buildHelmCommand(chartRepo, hasValues) {
   const version = normalizedVersion();
 
   const install = [
-    `helm upgrade --install ${state.releaseName || "rancher"} ${alias}/rancher`,
-    `--namespace ${state.namespace || "cattle-system"}`,
+    `helm upgrade --install ${state.releaseName || DEFAULT_RELEASE_NAME} ${alias}/rancher`,
+    `--namespace ${state.namespace || DEFAULT_NAMESPACE}`,
     "--create-namespace",
   ];
 
@@ -654,6 +673,7 @@ function setCode(node, text, emptyText) {
 
 function renderOutput() {
   const entry = entryFor(state.distribution, state.versionType);
+  scheduleUrlUpdate();
 
   if (!entry) {
     const combination = `${label(DISTRIBUTION_LABELS, state.distribution)} ${label(
@@ -674,6 +694,90 @@ function renderOutput() {
     fields.length ? buildValuesYaml(fields) : "",
     "# no custom values yet — the chart defaults are used",
   );
+}
+
+/* --------------------------------------------------------------------- *
+ * URL state: the current configuration is shareable as a link.
+ * --------------------------------------------------------------------- */
+
+/**
+ * Overrides arrive from the URL as strings, but bool fields are stored as real
+ * booleans (`Boolean("false")` is true). Re-type them against the chart in view.
+ */
+function normalizeOverrides() {
+  const byPath = new Map(buildFields().map((field) => [field.path, field]));
+
+  Object.keys(state.overrides).forEach((path) => {
+    const field = byPath.get(path);
+    if (!field) return;
+    const value = state.overrides[path];
+
+    if (field.type === "bool") state.overrides[path] = String(value) === "true";
+    else if (typeof value !== "string") state.overrides[path] = String(value);
+  });
+}
+
+function readUrlIntoState() {
+  const params = new URLSearchParams(window.location.search);
+
+  const distribution = params.get(URL_KEYS.distribution);
+  if (distribution && RELEASE_DATA[distribution]) state.distribution = distribution;
+
+  const versionType = params.get(URL_KEYS.versionType);
+  if (versionType && isAvailable(state.distribution, versionType)) state.versionType = versionType;
+
+  // A hand-edited URL can name a pair that was never published (community + head).
+  if (!isAvailable(state.distribution, state.versionType)) {
+    state.versionType = versionTypes().find((type) => isAvailable(state.distribution, type));
+  }
+
+  ["version", "releaseName", "namespace"].forEach((key) => {
+    const value = params.get(URL_KEYS[key]);
+    if (value !== null) state[key] = value;
+  });
+
+  state.overrides = {};
+  params.forEach((value, key) => {
+    if (key.startsWith(OVERRIDE_PREFIX)) state.overrides[key.slice(OVERRIDE_PREFIX.length)] = value;
+  });
+
+  normalizeOverrides();
+
+  el.version.value = state.version;
+  el.releaseName.value = state.releaseName;
+  el.namespace.value = state.namespace;
+}
+
+/** Only values that differ from the chart defaults are written to the URL. */
+function currentUrl() {
+  const params = new URLSearchParams();
+  params.set(URL_KEYS.distribution, state.distribution);
+  params.set(URL_KEYS.versionType, state.versionType);
+
+  if (state.version.trim()) params.set(URL_KEYS.version, state.version.trim());
+  if (state.releaseName !== DEFAULT_RELEASE_NAME) params.set(URL_KEYS.releaseName, state.releaseName);
+  if (state.namespace !== DEFAULT_NAMESPACE) params.set(URL_KEYS.namespace, state.namespace);
+
+  changedFields().forEach((field) => {
+    params.set(OVERRIDE_PREFIX + field.path, String(fieldValue(field)));
+  });
+
+  const query = params.toString();
+  return `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
+}
+
+function writeUrl() {
+  try {
+    window.history.replaceState(null, "", currentUrl());
+  } catch {
+    // Browsers reject history updates on file:// — the page still works, just without a shareable URL.
+  }
+}
+
+let urlTimer;
+function scheduleUrlUpdate() {
+  clearTimeout(urlTimer);
+  urlTimer = setTimeout(writeUrl, 250);
 }
 
 function bindInput(node, key) {
@@ -728,6 +832,7 @@ function init() {
     : versionTypes().find((type) => isAvailable(state.distribution, type));
   state.releaseName = el.releaseName.value;
   state.namespace = el.namespace.value;
+  readUrlIntoState();
 
   bindInput(el.version, "version");
   bindInput(el.releaseName, "releaseName");
@@ -737,6 +842,22 @@ function init() {
   el.resetValues.addEventListener("click", () => {
     state.overrides = {};
     renderValuesFields();
+    renderOutput();
+  });
+
+  el.copyLink.addEventListener("click", async () => {
+    writeUrl();
+    const copied = await copyText(window.location.href);
+    el.copyLink.textContent = copied ? "Copied" : "Failed";
+    setTimeout(() => {
+      el.copyLink.textContent = "Copy link";
+    }, 1500);
+  });
+
+  // Someone edited the address bar or used back/forward.
+  window.addEventListener("popstate", () => {
+    readUrlIntoState();
+    renderForm();
     renderOutput();
   });
 
