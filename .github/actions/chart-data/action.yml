@@ -32,9 +32,11 @@ inputs:
     required: false
     default: '8'
   image:
-    description: Generator image to run.
+    description: >-
+      Generator image to run. `edge` is whatever main last built; a release tag
+      (`:v1.2.0`) pins one build.
     required: false
-    default: ghcr.io/tashima42/rancher-helm-playground/chart-data:latest
+    default: ghcr.io/tashima42/rancher-helm-playground/chart-data:edge
   registry-token:
     description: >-
       Token to read the image with. Only needed while the package is private;
@@ -53,17 +55,23 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Log in to the registry
-      if: inputs.registry-token != ''
+    - name: Registry of the image
+      id: registry
       shell: bash
       env:
         IMAGE: ${{ inputs.image }}
-        TOKEN: ${{ inputs.registry-token }}
-        ACTOR: ${{ github.actor }}
       run: |
         set -euo pipefail
-        registry="${IMAGE%%/*}"
-        printf '%s' "$TOKEN" | docker login "$registry" --username "$ACTOR" --password-stdin
+        # Expressions have no split(), so the host is cut out here instead.
+        echo "host=${IMAGE%%/*}" >> "$GITHUB_OUTPUT"
+
+    - name: Log in to the registry
+      if: inputs.registry-token != ''
+      uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      with:
+        registry: ${{ steps.registry.outputs.host }}
+        username: ${{ github.actor }}
+        password: ${{ inputs.registry-token }}
 
     - name: Pull the generator
       shell: bash

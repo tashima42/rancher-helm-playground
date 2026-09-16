@@ -61,13 +61,17 @@ concurrency:
 
 jobs:
   update:
+    name: Refresh the chart data
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      # Reading the generator image from ghcr.io.
-      packages: read
+      contents: write # commits the refreshed data back to the branch
+      packages: read # reads the generator image from ghcr.io
     steps:
-      - uses: actions/checkout@v4
+      # No credentials are left in .git/config; the commit step authenticates
+      # its push on its own, so nothing else in the job can reach the token.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Generate chart data
         id: data

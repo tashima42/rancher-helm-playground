@@ -85,12 +85,19 @@ docker run --rm -v "$PWD:/work" ghcr.io/tashima42/rancher-helm-playground/chart-
 
 ### In CI
 
-`.github/workflows/publish-chart-data-image.yml` builds `tools/chart-data` into
-`ghcr.io/tashima42/rancher-helm-playground/chart-data` whenever the generator
-changes.
+The generator ships as `ghcr.io/tashima42/rancher-helm-playground/chart-data`:
 
-`.github/workflows/update-chart-data.yml` pulls that image, runs it daily and
-commits what changed. It is reusable — call it from another workflow with:
+| Workflow | Trigger | Tags it publishes |
+| --- | --- | --- |
+| `release.yml` | a `v*` tag | that exact tag, e.g. `v1.2.0` |
+| `publish-chart-data-image.yml` | a push to main touching `tools/chart-data/` | `edge`, `sha-<commit>` |
+
+So cutting a release is `git tag v1.2.0 && git push origin v1.2.0`. No floating
+`latest`, `1.2` or `1` tag is published, so an image tag always names one build.
+
+`.github/workflows/update-chart-data.yml` runs the generator daily and commits
+what changed. It pulls `edge`; pass `image:` to the action to pin a release
+instead. It is reusable — call it from another workflow with:
 
 ```yaml
 jobs:
