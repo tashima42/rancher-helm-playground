@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-16T16:39:22Z",
+  "chart": "rancher",
+  "distributions": [
+    {
+      "id": "community",
+      "label": "Community (CE)",
+      "chart": "rancher",
+      "channels": [
+        {
+          "id": "ga",
+          "label": "GA",
+          "hint": "Stable, generally available releases.",
+          "repo": "https://releases.rancher.com/server-charts/latest",
+          "devel": false,
+          "count": 159,
+          "latest": "2.15.1",
+          "versions": "versions/community-ga.json"
+        },
+        {
+          "id": "rc",
+          "label": "RC",
+          "hint": "Release candidates. Published to the latest repo, helm needs --devel.",
+          "repo": "https://releases.rancher.com/server-charts/latest",
+          "devel": true,
+          "count": 681,
+          "latest": "2.15.1-rc2",
+          "versions": "versions/community-rc.json"
+        },
+        {
+          "id": "alpha",
+          "label": "Alpha",
+          "hint": "Early pre-releases. Published to the alpha repo, helm needs --devel.",
+          "repo": "https://releases.rancher.com/server-charts/alpha",
+          "devel": true,
+          "count": 210,
+          "latest": "2.15.1-alpha1",
+          "versions": "versions/community-alpha.json"
+        }
+      ]
+    },
+    {
+      "id": "prime",
+      "label": "Prime",
+      "chart": "rancher",
+      "channels": [
+        {
+          "id": "ga",
+          "label": "GA",
+          "hint": "Stable, generally available releases.",
+          "repo": "https://charts.rancher.com/server-charts/prime",
+          "devel": false,
+          "count": 141,
+          "latest": "2.15.1",
+          "versions": "versions/prime-ga.json"
+        },
+        {
+          "id": "rc",
+          "label": "RC",
+          "hint": "Release candidates. Published to the latest repo, helm needs --devel.",
+          "repo": "https://charts.optimus.rancher.io/server-charts/latest",
+          "devel": true,
+          "count": 20,
+          "latest": "2.15.1-rc2",
+          "versions": "versions/prime-rc.json"
+        },
+        {
+          "id": "alpha",
+          "label": "Alpha",
+          "hint": "Early pre-releases. Published to the alpha repo, helm needs --devel.",
+          "repo": "https://charts.optimus.rancher.io/server-charts/alpha",
+          "devel": true,
+          "count": 192,
+          "latest": "2.15.1-alpha1",
+          "versions": "versions/prime-alpha.json"
+        },
+        {
+          "id": "head",
+          "label": "Head",
+          "hint": "Charts built from the head of a release line, one per commit.",
+          "repo": "https://charts.optimus.rancher.io/server-charts/latest",
+          "devel": true,
+          "count": 30,
+          "latest": "2.16.0-fa68b2b-head",
+          "versions": "versions/prime-head.json"
+        }
+      ]
+    }
+  ]
+}

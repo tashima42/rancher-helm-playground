@@ -174,7 +174,8 @@ legend {
   color: var(--muted);
 }
 
-.field input {
+.field input,
+.field select {
   width: 100%;
   padding: 0.5rem 0.7rem;
   border: 1px solid var(--border);
@@ -189,10 +190,15 @@ legend {
   color: rgba(25, 32, 114, 0.45);
 }
 
-.field input:focus-visible {
+.field input:focus-visible,
+.field select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
   border-color: var(--accent);
+}
+
+.field[hidden] {
+  display: none;
 }
 
 .hint {
@@ -206,6 +212,27 @@ legend {
 }
 
 /* Chart values form */
+
+.values-search {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.88rem;
+}
+
+.values-search::placeholder {
+  color: rgba(25, 32, 114, 0.45);
+}
+
+.values-search:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
 
 .fields {
   display: grid;
@@ -382,4 +409,22 @@ legend {
 .code.is-empty {
   background: var(--surface-sunken);
   color: var(--muted);
+}
+
+/* Loading the generated chart data */
+
+.banner {
+  margin: 0 auto 1.5rem;
+  max-width: 1100px;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--surface-sunken);
+  color: var(--heading);
+  font-size: 0.88rem;
+}
+
+body[data-busy] .layout {
+  opacity: 0.6;
+  transition: opacity 120ms linear;
 }

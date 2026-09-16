@@ -1,0 +1,108 @@
+---
+name: Generate chart data
+description: >-
+  Builds the playground's chart data from the helm repositories listed in a
+  config file. Only versions the ledger has never seen are downloaded, so a
+  scheduled run costs one index.yaml fetch per repository.
+
+inputs:
+  config:
+    description: Repository config to read.
+    required: false
+    default: charts/repos.yaml
+  out-dir:
+    description: Directory to write the generated data to.
+    required: false
+    default: data/v1
+  full-refresh:
+    description: Ignore the ledger and rebuild every version.
+    required: false
+    default: 'false'
+  max-new:
+    description: Stop after this many downloads, so a first run can be split up. 0 means no limit.
+    required: false
+    default: '0'
+  jobs:
+    description: Parallel chart downloads.
+    required: false
+    default: '8'
+  helm-version:
+    description: helm version to install.
+    required: false
+    default: v3.19.0
+  yq-version:
+    description: yq version to install when the runner has none.
+    required: false
+    default: v4.44.3
+
+outputs:
+  changed:
+    description: 'true when the generated data differs from what is committed.'
+    value: ${{ steps.generate.outputs.changed }}
+  versions:
+    description: Number of chart versions in the ledger after the run.
+    value: ${{ steps.generate.outputs.versions }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install helm
+      uses: azure/setup-helm@v4
+      with:
+        version: ${{ inputs.helm-version }}
+
+    - name: Install yq
+      shell: bash
+      env:
+        YQ_VERSION: ${{ inputs.yq-version }}
+      run: |
+        set -euo pipefail
+        command -v jq >/dev/null || { echo "::error::jq is required"; exit 1; }
+        if command -v yq >/dev/null; then
+          exit 0
+        fi
+        mkdir -p "$RUNNER_TEMP/bin"
+        curl -fsSL -o "$RUNNER_TEMP/bin/yq" \
+          "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+        chmod +x "$RUNNER_TEMP/bin/yq"
+        echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+    - name: Generate
+      id: generate
+      shell: bash
+      env:
+        CONFIG: ${{ inputs.config }}
+        OUT_DIR: ${{ inputs.out-dir }}
+        FULL_REFRESH: ${{ inputs.full-refresh }}
+        MAX_NEW: ${{ inputs.max-new }}
+        JOBS: ${{ inputs.jobs }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+
+        args=(--config "$CONFIG" --out "$OUT_DIR" --max-new "$MAX_NEW" --jobs "$JOBS")
+        [ "$FULL_REFRESH" = "true" ] && args+=(--full-refresh)
+
+        # The action ships next to the script when used from this repository;
+        # fall back to the checkout when it is used from another one.
+        script="$ACTION_PATH/../../../scripts/gen-chart-data.sh"
+        [ -f "$script" ] || script="scripts/gen-chart-data.sh"
+        [ -f "$script" ] || { echo "::error::gen-chart-data.sh not found"; exit 1; }
+
+        bash "$script" "${args[@]}"
+
+        versions=$(jq '.entries | length' "$OUT_DIR/state.json")
+        echo "versions=$versions" >> "$GITHUB_OUTPUT"
+
+        if [ -n "$(git status --porcelain -- "$OUT_DIR")" ]; then
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+        fi
+
+        {
+          echo "### Chart data"
+          echo
+          echo "- versions in the ledger: \`$versions\`"
+          echo "- payloads: \`$(find "$OUT_DIR/charts" -name '*.json' | wc -l | tr -d ' ')\`"
+        } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,83 @@
+---
+name: Update chart data
+
+# Refreshes data/v1 from the chart repositories. Versions already in the ledger
+# are never downloaded again, so the daily run is cheap.
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+    inputs:
+      full-refresh:
+        description: Ignore the ledger and rebuild every version.
+        type: boolean
+        required: false
+        default: false
+      max-new:
+        description: Stop after this many downloads (0 means no limit).
+        type: number
+        required: false
+        default: 0
+  # Callable from another workflow, in this repository or any other.
+  workflow_call:
+    inputs:
+      full-refresh:
+        description: Ignore the ledger and rebuild every version.
+        type: boolean
+        required: false
+        default: false
+      max-new:
+        description: Stop after this many downloads (0 means no limit).
+        type: number
+        required: false
+        default: 0
+      config:
+        description: Repository config to read.
+        type: string
+        required: false
+        default: charts/repos.yaml
+      out-dir:
+        description: Directory to write the generated data to.
+        type: string
+        required: false
+        default: data/v1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-chart-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate chart data
+        id: data
+        uses: ./.github/actions/chart-data
+        with:
+          config: ${{ inputs.config || 'charts/repos.yaml' }}
+          out-dir: ${{ inputs.out-dir || 'data/v1' }}
+          full-refresh: ${{ inputs.full-refresh && 'true' || 'false' }}
+          max-new: ${{ inputs.max-new || 0 }}
+
+      - name: Commit
+        if: steps.data.outputs.changed == 'true'
+        env:
+          OUT_DIR: ${{ inputs.out-dir || 'data/v1' }}
+          VERSIONS: ${{ steps.data.outputs.versions }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "$OUT_DIR"
+          git commit -m "chore: refresh chart data ($VERSIONS versions)"
+          git push || {
+            git pull --rebase
+            git push
+          }
