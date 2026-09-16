@@ -21,6 +21,26 @@ const EXTRA_COMMON_PATHS = ["bootstrapPassword", "replicas"];
  */
 const STALE_OPTIONS = new Set(["rancherImage", "rancherImageTag", "rancherImagePullPolicy"]);
 
+/**
+ * Values the playground starts from even when the chart ships something else,
+ * because they are what a Rancher install usually wants. They behave like any
+ * other change: the form shows them as changed, they can be edited back, and a
+ * chart version that has no such value simply ignores them.
+ *
+ * Write every value as the string the form would produce — booleans included,
+ * they are re-typed against the chart in view.
+ */
+const PLAYGROUND_DEFAULTS = {
+  agentTLSMode: "system-store",
+};
+
+/**
+ * The list of name/value pairs the chart appends to the Rancher deployment.
+ * It gets its own editor rather than the generic raw-YAML box a list would
+ * otherwise get, so it is kept out of the chart values form.
+ */
+const EXTRA_ENV_PATH = "extraEnv";
+
 /** Top-level key used for root-level values. */
 const ROOT_GROUP = "general";
 
@@ -80,6 +100,8 @@ const URL_KEYS = {
   namespace: "namespace",
   action: "action",
   valuesMode: "values",
+  // Repeated once per pair, as `env=NAME=VALUE`.
+  extraEnv: "env",
 };
 const OVERRIDE_PREFIX = "v.";
 
@@ -107,7 +129,14 @@ const state = {
   search: "",
   /** Explicit user edits, keyed by value path, e.g. { "ingress.tls.source": "letsEncrypt" }. */
   overrides: {},
+  /** extraEnv, in order: [{ name: "CATTLE_AGENT_IMAGE", value: "…" }]. */
+  extraEnv: [],
 };
+
+/** The overrides a page with nothing shared into it starts from. */
+function seedOverrides() {
+  return { ...PLAYGROUND_DEFAULTS };
+}
 
 /** The generated data, loaded a file at a time and kept as promises. */
 const data = {
@@ -118,8 +147,12 @@ const data = {
   charts: new Map(),
 };
 
-/** Groups the user has expanded; kept open across re-renders. */
-const openGroups = new Set();
+/**
+ * Groups start expanded, so everything the chart accepts is visible by
+ * scrolling. This is the ones the user has collapsed, kept shut across
+ * re-renders.
+ */
+const closedGroups = new Set();
 
 const el = {
   distributionChoices: document.getElementById("distribution-choices"),
@@ -139,6 +172,9 @@ const el = {
   valueGroups: document.getElementById("value-groups"),
   valuesSearch: document.getElementById("values-search"),
   valuesSummary: document.getElementById("values-summary"),
+  extraEnv: document.getElementById("extra-env"),
+  extraEnvHint: document.getElementById("extra-env-hint"),
+  addExtraEnv: document.getElementById("add-extra-env"),
   resetValues: document.getElementById("reset-values"),
   copyLink: document.getElementById("copy-link"),
   chartRepo: document.getElementById("chart-repo"),
@@ -320,18 +356,22 @@ function buildFields() {
   });
 
   return leaves
-    .filter((leaf) => !STALE_OPTIONS.has(leaf.path))
+    .filter((leaf) => !STALE_OPTIONS.has(leaf.path) && leaf.path !== EXTRA_ENV_PATH)
     .map((leaf) => {
       // values.yaml writes an unset key as `systemDefaultRegistry:`, which parses as null.
       const defaultValue = leaf.value === null ? "" : leaf.value;
       const type = typeOfValue(defaultValue);
       const option = docs.get(leaf.path);
       const segments = leaf.path.split(".");
+      const seeded = Object.prototype.hasOwnProperty.call(PLAYGROUND_DEFAULTS, leaf.path);
 
       return {
         path: leaf.path,
         group: segments.length > 1 ? segments[0] : ROOT_GROUP,
-        common: option?.section === "common" || EXTRA_COMMON_PATHS.includes(leaf.path),
+        // A value the playground moved off the chart default is worth seeing
+        // without hunting for it, so it is promoted alongside the common ones.
+        common: option?.section === "common" || EXTRA_COMMON_PATHS.includes(leaf.path) || seeded,
+        seeded,
         type,
         description: option ? cleanDescription(option.description) : "",
         defaultValue,
@@ -358,21 +398,45 @@ function choicesFor(chart, path) {
   return choices;
 }
 
+/** What the chart itself ships for a field. */
+function chartValue(field) {
+  return field.type === "yaml" ? field.defaultText : field.defaultValue;
+}
+
+/**
+ * What the field holds before anyone touches it: the chart default, unless the
+ * playground overrides it. This is the baseline "Reset" restores and the one
+ * the URL is written against, so a link only carries deliberate edits.
+ */
+function startingValue(field) {
+  if (!field.seeded) return chartValue(field);
+  const seeded = PLAYGROUND_DEFAULTS[field.path];
+  return field.type === "bool" ? String(seeded) === "true" : seeded;
+}
+
 /** Current value of a field: the user's override, or the chart default. */
 function fieldValue(field) {
   return Object.prototype.hasOwnProperty.call(state.overrides, field.path)
     ? state.overrides[field.path]
-    : field.type === "yaml"
-      ? field.defaultText
-      : field.defaultValue;
+    : chartValue(field);
 }
 
+/** Compares two values of one field in that field's own type. */
+function sameValue(field, a, b) {
+  if (field.type === "yaml") return String(a).trim() === String(b).trim();
+  if (field.type === "int") return Number(a) === Number(b);
+  if (field.type === "bool") return Boolean(a) === Boolean(b);
+  return String(a) === String(b);
+}
+
+/** Differs from the chart, so it has to be written to the command or the file. */
 function isChanged(field) {
-  const current = fieldValue(field);
-  if (field.type === "yaml") return current.trim() !== field.defaultText.trim();
-  if (field.type === "int") return Number(current) !== Number(field.defaultValue);
-  if (field.type === "bool") return Boolean(current) !== Boolean(field.defaultValue);
-  return String(current) !== String(field.defaultValue);
+  return !sameValue(field, fieldValue(field), chartValue(field));
+}
+
+/** Differs from what the page started with, so a shared link has to carry it. */
+function isEdited(field) {
+  return !sameValue(field, fieldValue(field), startingValue(field));
 }
 
 /* --------------------------------------------------------------------- *
@@ -475,7 +539,21 @@ function changedFields() {
   return buildFields().filter(isChanged);
 }
 
-function buildValuesYaml(fields) {
+/** The extraEnv pairs worth emitting; a row still being typed has no name yet. */
+function extraEnvEntries() {
+  return state.extraEnv
+    .map((entry) => ({ name: entry.name.trim(), value: entry.value }))
+    .filter((entry) => entry.name !== "");
+}
+
+/** extraEnv as the list of name/value maps the chart expects. */
+function extraEnvYaml(entries) {
+  return entries
+    .map((entry) => `- name: ${scalarToYaml(entry.name)}\n  value: ${scalarToYaml(entry.value)}\n`)
+    .join("");
+}
+
+function buildValuesYaml(fields, env) {
   const tree = {};
   fields.forEach((field) => {
     const current = fieldValue(field);
@@ -487,6 +565,7 @@ function buildValuesYaml(fields) {
       setLeaf(tree, field.path, { __leaf: true, kind: "scalar", value });
     }
   });
+  if (env.length) setLeaf(tree, EXTRA_ENV_PATH, { __leaf: true, kind: "raw", text: extraEnvYaml(env) });
   return renderTree(tree);
 }
 
@@ -566,6 +645,16 @@ function renderField(field) {
     help.className = "value-help";
     help.append(renderDescription(field.description));
     wrapper.append(help);
+  }
+
+  // Say so when the value on screen is the playground's choice rather than the
+  // chart's, so nobody has to wonder why a fresh page already has a change.
+  if (field.seeded && !sameValue(field, startingValue(field), chartValue(field))) {
+    const note = document.createElement("p");
+    note.className = "value-note";
+    const shipped = String(chartValue(field));
+    note.textContent = `Set by the playground; the chart ships ${shipped === "" ? "no value" : shipped}.`;
+    wrapper.append(note);
   }
   return wrapper;
 }
@@ -679,6 +768,7 @@ async function renderForm() {
   );
 
   renderVersionChoices(await versionsFor(state.distribution, state.versionType));
+  renderExtraEnv();
   renderValuesFields();
 }
 
@@ -740,10 +830,10 @@ function renderGroups(fields) {
   return [...groups].map(([name, groupFields]) => {
     const details = document.createElement("details");
     details.className = "advanced";
-    if (openGroups.has(name)) details.open = true;
+    details.open = !closedGroups.has(name);
     details.addEventListener("toggle", () => {
-      if (details.open) openGroups.add(name);
-      else openGroups.delete(name);
+      if (details.open) closedGroups.delete(name);
+      else closedGroups.add(name);
     });
 
     const summary = document.createElement("summary");
@@ -774,6 +864,78 @@ function matchesSearch(field, terms) {
   return terms.every((term) => haystack.includes(term));
 }
 
+/**
+ * extraEnv, one row per pair. The rows are rebuilt only when one is added or
+ * removed: typing must not cost the input its focus, so the handlers below
+ * redraw the output and leave the form alone.
+ */
+function renderExtraEnv() {
+  el.extraEnv.replaceChildren(...state.extraEnv.map(renderExtraEnvRow));
+  renderExtraEnvHint();
+}
+
+function renderExtraEnvHint() {
+  const count = extraEnvEntries().length;
+  el.extraEnvHint.textContent = count
+    ? `${count} variable${count === 1 ? "" : "s"} added to the Rancher deployment, as extraEnv[i].name and extraEnv[i].value.`
+    : "Nothing here yet. These are set on the Rancher deployment itself, such as CATTLE_AGENT_IMAGE.";
+}
+
+function renderExtraEnvRow(entry, index) {
+  const row = document.createElement("div");
+  row.className = "env-row";
+
+  const head = document.createElement("div");
+  head.className = "env-head";
+
+  // The index is the one the --set flags use, so the form reads like the output.
+  const label = document.createElement("span");
+  label.className = "env-index";
+  label.textContent = `${EXTRA_ENV_PATH}[${index}]`;
+
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "link-button";
+  remove.textContent = "Remove";
+  remove.setAttribute("aria-label", `Remove ${EXTRA_ENV_PATH}[${index}]`);
+  remove.addEventListener("click", () => {
+    state.extraEnv.splice(index, 1);
+    renderExtraEnv();
+    renderOutput();
+  });
+
+  head.append(label, remove);
+  row.append(
+    head,
+    extraEnvField(entry, index, "name", "CATTLE_AGENT_IMAGE"),
+    extraEnvField(entry, index, "value", "registry.suse.com/rancher/rancher-agent:v2.11.0"),
+  );
+  return row;
+}
+
+function extraEnvField(entry, index, key, placeholder) {
+  const field = document.createElement("label");
+  field.className = "env-field";
+
+  const caption = document.createElement("span");
+  caption.textContent = key;
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.spellcheck = false;
+  input.value = entry[key];
+  input.placeholder = placeholder;
+  input.setAttribute("aria-label", `${EXTRA_ENV_PATH}[${index}].${key}`);
+  input.addEventListener("input", () => {
+    entry[key] = input.value;
+    renderExtraEnvHint();
+    renderOutput();
+  });
+
+  field.append(caption, input);
+  return field;
+}
+
 function renderValuesFields() {
   const fields = buildFields();
   const terms = searchTerms();
@@ -788,16 +950,26 @@ function renderValuesFields() {
     const matches = fields.filter((field) => matchesSearch(field, terms));
     el.commonFields.replaceChildren(...matches.map(renderField));
     el.valueGroups.replaceChildren();
+
+    // extraEnv is not one of these fields, so looking for it here finds nothing.
+    const elsewhere = terms.some(
+      (term) => term.length >= 3 && EXTRA_ENV_PATH.toLowerCase().includes(term),
+    )
+      ? ` ${EXTRA_ENV_PATH} has its own section above.`
+      : "";
+
     el.valuesSummary.textContent = matches.length
-      ? `${matches.length} of ${fields.length} values match. ${changedText}`
-      : `No values match “${state.search.trim()}”.`;
+      ? `${matches.length} of ${fields.length} values match. ${changedText}${elsewhere}`
+      : `No values match “${state.search.trim()}”.${elsewhere}`;
   } else {
     el.commonFields.replaceChildren(...fields.filter((field) => field.common).map(renderField));
     el.valueGroups.replaceChildren(...renderGroups(fields.filter((field) => !field.common)));
     el.valuesSummary.textContent = changedText;
   }
 
-  el.resetValues.hidden = changed === 0;
+  // Reset restores the playground's own starting point, so it only makes sense
+  // once something has moved away from it.
+  el.resetValues.hidden = !fields.some(isEdited);
 }
 
 function selectDistribution(distribution) {
@@ -850,22 +1022,34 @@ function selectVersion(value) {
 }
 
 /**
- * Splits the changed values into the ones the command can carry and the ones
- * that have to stay in a file. --set takes scalars only, so arrays and maps
- * (the fields edited as raw YAML) keep their file even in --set mode.
+ * Splits everything that has to reach helm into what the command can carry and
+ * what has to stay in a file. --set takes scalars only, so arrays and maps (the
+ * fields edited as raw YAML) keep their file even in --set mode; extraEnv is the
+ * exception, because helm can address a list entry by index.
  */
-function splitValues(fields) {
-  if (state.valuesMode !== "set") return { file: fields, set: [] };
+function splitValues(fields, env) {
+  const onCommand = state.valuesMode === "set";
   return {
-    file: fields.filter((field) => field.type === "yaml"),
-    set: fields.filter((field) => field.type !== "yaml"),
+    file: onCommand ? fields.filter((field) => field.type === "yaml") : fields,
+    set: onCommand ? fields.filter((field) => field.type !== "yaml") : [],
+    fileEnv: onCommand ? [] : env,
+    setEnv: onCommand ? env : [],
   };
+}
+
+function needsValuesFile(split) {
+  return split.file.length > 0 || split.fileEnv.length > 0;
 }
 
 /** Quotes an argument the shell would otherwise mangle. */
 function shellQuote(text) {
   if (text !== "" && !/[^A-Za-z0-9_@%+=:,./-]/.test(text)) return text;
   return `'${text.replace(/'/g, `'\\''`)}'`;
+}
+
+/** helm reads "," as a flag separator and "\" as its own escape, inside the value too. */
+function helmEscape(value) {
+  return value.replace(/([\\,])/g, "\\$1");
 }
 
 /** One --set flag. Strings go through --set-string so helm keeps them strings. */
@@ -878,10 +1062,22 @@ function setFlag(field) {
         ? String(Number(current))
         : String(current);
 
-  // helm reads "," as a flag separator and "\" as its own escape, inside the value too.
-  const escaped = value.replace(/([\\,])/g, "\\$1");
   const flag = field.type === "string" ? "--set-string" : "--set";
-  return `${flag} ${shellQuote(`${field.path}=${escaped}`)}`;
+  return `${flag} ${shellQuote(`${field.path}=${helmEscape(value)}`)}`;
+}
+
+/**
+ * Two flags per pair, addressed by position: extraEnv[0].name, extraEnv[0].value.
+ * Both go through --set-string, so a value that looks like a number ("8080")
+ * still reaches the pod spec as the string the env var has to be.
+ */
+function extraEnvFlags(entries) {
+  return entries.flatMap((entry, index) =>
+    ["name", "value"].map(
+      (key) =>
+        `--set-string ${shellQuote(`${EXTRA_ENV_PATH}[${index}].${key}=${helmEscape(entry[key])}`)}`,
+    ),
+  );
 }
 
 function buildHelmCommand(chartRepo, split) {
@@ -901,8 +1097,9 @@ function buildHelmCommand(chartRepo, split) {
 
   if (version) command.push(`--version ${version}`);
   if (channelFor(state.distribution, state.versionType)?.devel) command.push("--devel");
-  if (split.file.length) command.push("--values values.yaml");
+  if (needsValuesFile(split)) command.push("--values values.yaml");
   split.set.forEach((field) => command.push(setFlag(field)));
+  command.push(...extraEnvFlags(split.setEnv));
 
   return [
     `helm repo add ${alias} ${chartRepo}`,
@@ -930,14 +1127,14 @@ function renderOutput() {
   }
 
   const fields = changedFields();
-  const split = splitValues(fields);
+  const split = splitValues(fields, extraEnvEntries());
 
   setCode(el.chartRepo, channel.repo, "");
   setCode(el.helmCommand, buildHelmCommand(channel.repo, split), "");
   setCode(
     el.valuesYaml,
-    split.file.length ? buildValuesYaml(split.file) : "",
-    state.valuesMode === "set" && split.set.length
+    needsValuesFile(split) ? buildValuesYaml(split.file, split.fileEnv) : "",
+    state.valuesMode === "set" && (split.set.length || split.setEnv.length)
       ? "# nothing to write — the values are passed with --set on the command"
       : "# no custom values yet — the chart defaults are used",
   );
@@ -1007,9 +1204,18 @@ function readUrlIntoState() {
     ? valuesMode
     : DEFAULT_VALUES_MODE;
 
-  state.overrides = {};
+  // The playground's own defaults are the baseline; the link edits them.
+  state.overrides = seedOverrides();
   params.forEach((value, key) => {
     if (key.startsWith(OVERRIDE_PREFIX)) state.overrides[key.slice(OVERRIDE_PREFIX.length)] = value;
+  });
+
+  state.extraEnv = params.getAll(URL_KEYS.extraEnv).map((pair) => {
+    // Only the first "=" separates them; a value is free to contain more.
+    const cut = pair.indexOf("=");
+    return cut === -1
+      ? { name: pair, value: "" }
+      : { name: pair.slice(0, cut), value: pair.slice(cut + 1) };
   });
 
   el.version.value = state.version;
@@ -1017,7 +1223,11 @@ function readUrlIntoState() {
   el.namespace.value = state.namespace;
 }
 
-/** Only values that differ from the chart defaults are written to the URL. */
+/**
+ * Only values that differ from what the page starts with are written to the
+ * URL — including a playground default that was edited back to the chart's own,
+ * which is the one case where "same as the chart" is still a deliberate choice.
+ */
 function currentUrl() {
   const params = new URLSearchParams();
   params.set(URL_KEYS.distribution, state.distribution);
@@ -1029,8 +1239,12 @@ function currentUrl() {
   if (state.action !== DEFAULT_ACTION) params.set(URL_KEYS.action, state.action);
   if (state.valuesMode !== DEFAULT_VALUES_MODE) params.set(URL_KEYS.valuesMode, state.valuesMode);
 
-  changedFields().forEach((field) => {
-    params.set(OVERRIDE_PREFIX + field.path, String(fieldValue(field)));
+  buildFields()
+    .filter(isEdited)
+    .forEach((field) => params.set(OVERRIDE_PREFIX + field.path, String(fieldValue(field))));
+
+  extraEnvEntries().forEach((entry) => {
+    params.append(URL_KEYS.extraEnv, `${entry.name}=${entry.value}`);
   });
 
   const query = params.toString();
@@ -1142,8 +1356,15 @@ function bindEvents() {
   });
 
   el.resetValues.addEventListener("click", () => {
-    state.overrides = {};
+    state.overrides = seedOverrides();
     renderValuesFields();
+    renderOutput();
+  });
+
+  el.addExtraEnv.addEventListener("click", () => {
+    state.extraEnv.push({ name: "", value: "" });
+    renderExtraEnv();
+    el.extraEnv.querySelector(".env-row:last-of-type input")?.focus();
     renderOutput();
   });
 

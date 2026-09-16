@@ -298,6 +298,120 @@ legend {
   color: var(--accent);
 }
 
+.value-note {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--accent);
+}
+
+/* Extra environment variables. Boxed and tinted: the section is easy to walk
+   past in a column of plain form fields, and it is empty until it is used. */
+
+.env-panel {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+}
+
+.env-panel .hint {
+  margin: 0;
+}
+
+.env-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.env-list:empty {
+  display: none;
+}
+
+.env-add {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.env-add:hover {
+  border-style: solid;
+  background: var(--accent);
+  color: var(--white);
+}
+
+.env-add:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.env-row {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.env-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.env-index {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.env-head .link-button {
+  margin-left: 0;
+}
+
+.env-field span {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.env-field input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+
+.env-field input::placeholder {
+  color: rgba(25, 32, 114, 0.45);
+}
+
+.env-field input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
 .advanced {
   margin-top: 1.25rem;
   border-top: 1px solid var(--border);

@@ -12,6 +12,33 @@ It has the following features
   or `--reuse-values`
 * Pass your values as `--set` flags on the command or as a `values.yaml` file
 * Customize the rancher chart values
+* Add any number of extra environment variables for the Rancher deployment
+* Share the whole configuration as a link
+
+## Playground defaults
+
+A few values start off different from what the chart ships, because they are
+what a Rancher install usually wants. Today that is `agentTLSMode=system-store`.
+They behave like any other change — the field is marked, it can be edited back,
+and a chart version without that value ignores it — so the only difference is
+where the page starts.
+
+They live in `PLAYGROUND_DEFAULTS` at the top of `docs/js/app.js`; add a path
+and the string it should start at.
+
+## Extra environment variables
+
+`extraEnv` gets its own editor instead of the raw-YAML box a list would
+otherwise get, because the pairs are addressed by position on the command line:
+
+```sh
+--set-string 'extraEnv[0].name=CATTLE_AGENT_IMAGE' \
+  --set-string 'extraEnv[0].value=stgregistry.suse.com/rancher/rancher-agent:v2.15.2-ab15f61-head'
+```
+
+`--set-string` rather than `--set`, so a value that looks like a number reaches
+the pod spec as the string an environment variable has to be. In `values.yaml`
+mode the same pairs are written as a list instead.
 
 ## The site
 
