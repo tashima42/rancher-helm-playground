@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Generates the data the playground UI reads, from what the chart repositories
-# in charts/repos.yaml actually publish.
+# in data/repos.yaml actually publish.
 #
 # Output (all files carry a "schemaVersion"):
 #
@@ -19,7 +19,7 @@
 # left to js/app.js.
 #
 # Usage: scripts/gen-chart-data.sh [options]
-#   --config FILE   repository config       (default charts/repos.yaml)
+#   --config FILE   repository config       (default data/repos.yaml)
 #   --out DIR       output directory        (default data/v1)
 #   --full-refresh  ignore the ledger and rebuild every version
 #   --max-new N     stop after N downloads, so a bootstrap can be split up
@@ -200,7 +200,7 @@ pull_one() {
 # --------------------------------------------------------------------- #
 
 main() {
-  local config="$repo_root/charts/repos.yaml"
+  local config="$repo_root/data/repos.yaml"
   local out_dir="$repo_root/data/v1"
   local full_refresh=false retry_missing=false max_new=0 jobs=8
 

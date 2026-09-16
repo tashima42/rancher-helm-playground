@@ -35,7 +35,7 @@ on:
         description: Repository config to read.
         type: string
         required: false
-        default: charts/repos.yaml
+        default: data/repos.yaml
       out-dir:
         description: Directory to write the generated data to.
         type: string
@@ -61,7 +61,7 @@ jobs:
         id: data
         uses: ./.github/actions/chart-data
         with:
-          config: ${{ inputs.config || 'charts/repos.yaml' }}
+          config: ${{ inputs.config || 'data/repos.yaml' }}
           out-dir: ${{ inputs.out-dir || 'data/v1' }}
           full-refresh: ${{ inputs.full-refresh && 'true' || 'false' }}
           max-new: ${{ inputs.max-new || 0 }}

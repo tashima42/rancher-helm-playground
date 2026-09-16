@@ -1,0 +1,71 @@
+---
+# The chart repositories the playground offers.
+#
+# This file is the only hand-maintained input: scripts/gen-chart-data.sh reads
+# it and writes everything under data/ from what the repositories publish.
+#
+# Channels are matched in order. The first channel whose `match` regex accepts a
+# chart version claims it, so a version is only ever downloaded once per
+# distribution even when two channels share a repository.
+#
+#   id      key used in URLs and file names
+#   label   shown in the UI
+#   hint    one-line explanation shown under the version type choices
+#   repo    helm repository URL
+#   match   extended regex tested against the chart version (not the appVersion)
+#   devel   pre-release channel, so the generated helm command needs --devel
+#   limit   keep only the newest N versions in the UI list (optional)
+
+schemaVersion: 1
+chart: rancher
+
+distributions:
+  - id: community
+    label: Community (CE)
+    channels:
+      - id: ga
+        label: GA
+        hint: Stable, generally available releases.
+        repo: https://releases.rancher.com/server-charts/latest
+        match: '^[0-9]+\.[0-9]+\.[0-9]+(-hotfix[.-][0-9A-Za-z.-]+)?$'
+      - id: rc
+        label: RC
+        hint: Release candidates. Published to the latest repo, helm needs --devel.
+        repo: https://releases.rancher.com/server-charts/latest
+        match: '-(patch[0-9]+-)?rc[0-9]*$'
+        devel: true
+      - id: alpha
+        label: Alpha
+        hint: Early pre-releases. Published to the alpha repo, helm needs --devel.
+        repo: https://releases.rancher.com/server-charts/alpha
+        match: '-alpha[0-9]*$'
+        devel: true
+
+  - id: prime
+    label: Prime
+    channels:
+      - id: ga
+        label: GA
+        hint: Stable, generally available releases.
+        repo: https://charts.rancher.com/server-charts/prime
+        match: '^[0-9]+\.[0-9]+\.[0-9]+(-hotfix[.-][0-9A-Za-z.-]+)?$'
+      - id: rc
+        label: RC
+        hint: Release candidates. Published to the latest repo, helm needs --devel.
+        repo: https://charts.optimus.rancher.io/server-charts/latest
+        match: '-(patch[0-9]+-)?rc[0-9]*$'
+        devel: true
+      - id: alpha
+        label: Alpha
+        hint: Early pre-releases. Published to the alpha repo, helm needs --devel.
+        repo: https://charts.optimus.rancher.io/server-charts/alpha
+        match: '-alpha[0-9]*$'
+        devel: true
+      - id: head
+        label: Head
+        hint: Charts built from the head of a release line, one per commit.
+        repo: https://charts.optimus.rancher.io/server-charts/latest
+        match: '-head$'
+        devel: true
+        # One build per commit, so only the newest handful are worth listing.
+        limit: 30

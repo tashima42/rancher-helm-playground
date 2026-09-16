@@ -1,0 +1,1 @@
+{"options":[],"schema":{},"schemaVersion":1,"values":{"debug":false,"imagePullSecrets":[],"ingress":{"tls":{"source":"rancher"}},"letsEncrypt":{"environment":"production"},"noProxy":"localhost,127.0.0.1","privateCA":false,"rancherImage":"rancher/rancher","rancherImageTag":"v2.0.6","replicas":1,"resources":{},"tls":"ingress"}}

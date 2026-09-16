@@ -9,7 +9,7 @@ inputs:
   config:
     description: Repository config to read.
     required: false
-    default: charts/repos.yaml
+    default: data/repos.yaml
   out-dir:
     description: Directory to write the generated data to.
     required: false
