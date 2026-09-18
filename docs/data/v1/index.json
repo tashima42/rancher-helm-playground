@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-17T11:50:28Z",
+  "generatedAt": "2026-09-18T11:26:03Z",
   "chart": "rancher",
   "distributions": [
     {
@@ -82,7 +82,7 @@
           "repo": "https://charts.optimus.rancher.io/server-charts/latest",
           "devel": true,
           "count": 30,
-          "latest": "2.16.0-a1833db-head",
+          "latest": "2.16.0-c033dc5-head",
           "versions": "versions/prime-head.json"
         }
       ]
