@@ -4812,6 +4812,18 @@
       "chart": "6349521bbfd48ecd2400166aadaa91e5f3e6debd84e77ba00295cc1c3b09fe17",
       "digest": "9f011be2863c5d54eceb521948a83e012e38ea09ca5c5f1dd9f2c121f450c7e5"
     },
+    "prime/2.11.18-67cb6a4-head": {
+      "chart": "d47733790e7e9a011bf9703779eea959ee4d1e7d5eb2e859f5cd8289d545a5e3",
+      "digest": "b677c2a7bc88a38c6660555dbf73b883918c0581e0ff56119742da8afad02769"
+    },
+    "prime/2.11.18-826ceb1-head": {
+      "chart": "d47733790e7e9a011bf9703779eea959ee4d1e7d5eb2e859f5cd8289d545a5e3",
+      "digest": "7341cac7233ec897e8d8db14ed474d551301e57dce0b7a50c35e147a6c9a3853"
+    },
+    "prime/2.11.18-9409959-head": {
+      "chart": "d47733790e7e9a011bf9703779eea959ee4d1e7d5eb2e859f5cd8289d545a5e3",
+      "digest": "5fd7a782541c7853e43d63dabd9062a20fceac0d9e3fe16cf9c0bafd792e7eea"
+    },
     "prime/2.11.18-97512bb-head": {
       "chart": "6349521bbfd48ecd2400166aadaa91e5f3e6debd84e77ba00295cc1c3b09fe17",
       "digest": "557f38eda257e384065ff8a947de0787f6d09a92fa221524ed8dc4f86c0340e9"
@@ -5180,6 +5192,10 @@
       "chart": "125f23a4a3595e004e25ce1f5d3609a57a245f04eb012b3a521cbd695bb20472",
       "digest": "57765c7533efd7036ea35b0fa3cd47e1b3022c8690e0a6b4c8244150a4959ec3"
     },
+    "prime/2.12.14-1e125b4-head": {
+      "chart": "fe59fcd9a143f985fd1f3db86e420649b757c8146e4f1763614dd70915edadc6",
+      "digest": "7bc011f3142c0a5ef0d9ca6ffb7c62655ea606c26a95d7b1ca5708da72ecf2a1"
+    },
     "prime/2.12.14-2d34637-head": {
       "chart": "125f23a4a3595e004e25ce1f5d3609a57a245f04eb012b3a521cbd695bb20472",
       "digest": "cc1aeaac26aa152a4b9ef8a1134b14a0acd3f0b8bc87d6a0e186832017cdd008"
@@ -5191,6 +5207,10 @@
     "prime/2.12.14-89e61f6-head": {
       "chart": "125f23a4a3595e004e25ce1f5d3609a57a245f04eb012b3a521cbd695bb20472",
       "digest": "fd0bb8ca928ec54c5e9cb875091260251763818cc5b19a79bfbb0927cf33ac85"
+    },
+    "prime/2.12.14-8a87d14-head": {
+      "chart": "fe59fcd9a143f985fd1f3db86e420649b757c8146e4f1763614dd70915edadc6",
+      "digest": "4edb39444e89ca8ca76b5591a954b0e231f3c04449397a8868b3527e69206c94"
     },
     "prime/2.12.14-a6ee0ee-head": {
       "chart": "fe59fcd9a143f985fd1f3db86e420649b757c8146e4f1763614dd70915edadc6",
@@ -5380,6 +5400,10 @@
       "chart": "f957c89eeca3375305c3de50452f650c1651b8db009127e731b1d2c118331cc6",
       "digest": "5eb7c65494fc7ba5d7809d4e3d89056e2d147f48e7b20c508792e8e333185e4a"
     },
+    "prime/2.13.10-62590f5-head": {
+      "chart": "f957c89eeca3375305c3de50452f650c1651b8db009127e731b1d2c118331cc6",
+      "digest": "2540b8c4972d6fc78eea7879395460f06a7b736b159eb418a9463be7d6a50680"
+    },
     "prime/2.13.10-72cf83e-head": {
       "chart": "df090f42242775fb60306f88ff92adc241685dc4c8c940f7c4f44d9682a611c1",
       "digest": "6fb72d57fe0c295672f6d4eabd265bab4612e0c460cc375cc37ed0ecffdc3d39"
@@ -5399,6 +5423,14 @@
     "prime/2.13.10-a071a0b-head": {
       "chart": "df090f42242775fb60306f88ff92adc241685dc4c8c940f7c4f44d9682a611c1",
       "digest": "507e87cd3eb453e4b2c66035aea3f8d3a12e20d6e16f44949c07224104df0347"
+    },
+    "prime/2.13.10-c5bae6e-head": {
+      "chart": "f957c89eeca3375305c3de50452f650c1651b8db009127e731b1d2c118331cc6",
+      "digest": "09880818e978c4a43ce68ff2895dc39f57130442f6eae4507467d0bb8ca214a5"
+    },
+    "prime/2.13.10-e3d26a5-head": {
+      "chart": "f957c89eeca3375305c3de50452f650c1651b8db009127e731b1d2c118331cc6",
+      "digest": "4f4c0ce79a78a33e326f0bd1aade0971c827ad7c7a0b4009aa5f2217bac210da"
     },
     "prime/2.13.10-f20cfbe-head": {
       "chart": "f957c89eeca3375305c3de50452f650c1651b8db009127e731b1d2c118331cc6",
@@ -5896,6 +5928,10 @@
       "chart": "94d5012d785bc42cb29149ae8fba42c24d63466586878cb327f0067caa5c0ba7",
       "digest": "b908d7d007b5f56f45df651ba79c7625acbf7aded9d483063e255be44166d699"
     },
+    "prime/2.14.6-0f6c130-head": {
+      "chart": "d492ff4e660cf757728ae162373588a1e5040b78ab26711f8b2c44fcf0ea6bbc",
+      "digest": "bd23b88efc788e365d1c18008e816ad9f85965a253b18370f32fd165f07a5bae"
+    },
     "prime/2.14.6-1d6945a-head": {
       "chart": "94d5012d785bc42cb29149ae8fba42c24d63466586878cb327f0067caa5c0ba7",
       "digest": "0ca684cfba337c13fa77889ceac2586263221a8f589f81e0ec98439f3419db15"
@@ -5923,6 +5959,14 @@
     "prime/2.14.6-ae5578b-head": {
       "chart": "d492ff4e660cf757728ae162373588a1e5040b78ab26711f8b2c44fcf0ea6bbc",
       "digest": "6b4ca4a45a8e0ad8efa66694974322c07329f0495cf8d4d757c75d0858761fd3"
+    },
+    "prime/2.14.6-b9899d4-head": {
+      "chart": "d492ff4e660cf757728ae162373588a1e5040b78ab26711f8b2c44fcf0ea6bbc",
+      "digest": "c890c97fc275b79e4dfc508069db0cf9081effbae6bfb973536fe643f33e707b"
+    },
+    "prime/2.14.6-c307e3a-head": {
+      "chart": "d492ff4e660cf757728ae162373588a1e5040b78ab26711f8b2c44fcf0ea6bbc",
+      "digest": "d8192f15aa71c6d7210af03217613a10b9200bfe359c72e72a20fea7008a4fec"
     },
     "prime/2.14.6-dd4a211-head": {
       "chart": "d492ff4e660cf757728ae162373588a1e5040b78ab26711f8b2c44fcf0ea6bbc",
@@ -6020,9 +6064,17 @@
       "chart": "862b3634462b29d7e0e7e72eb8b4e09f14f74fd38768a5f06c50134eb80a5322",
       "digest": "c14d215db156ad9f7e3d86142f72d262891d53d77e83243f6bd8ca283aa89118"
     },
+    "prime/2.15.2-011b026-head": {
+      "chart": "43ccf6b793fab191ccff11b6d0535e2f501678f7d39b2d0ec49b5a7103573de2",
+      "digest": "51630e90a0ad0dd6cdaa849cc1a4044bbc00ca6574599ffe1dcd56e4646fad5b"
+    },
     "prime/2.15.2-0f8eee2-head": {
       "chart": "43ccf6b793fab191ccff11b6d0535e2f501678f7d39b2d0ec49b5a7103573de2",
       "digest": "9ae8a2431e623c24c62c469d0d99737f676d2e974bac0335dfd707409962b31b"
+    },
+    "prime/2.15.2-47919f9-head": {
+      "chart": "43ccf6b793fab191ccff11b6d0535e2f501678f7d39b2d0ec49b5a7103573de2",
+      "digest": "b06306e74529377bacc145937861aa0bb9a7bea44599574a5f9cab546ce13df3"
     },
     "prime/2.15.2-62e5cd1-head": {
       "chart": "862b3634462b29d7e0e7e72eb8b4e09f14f74fd38768a5f06c50134eb80a5322",
@@ -6031,6 +6083,10 @@
     "prime/2.15.2-a1d47a3-head": {
       "chart": "862b3634462b29d7e0e7e72eb8b4e09f14f74fd38768a5f06c50134eb80a5322",
       "digest": "a853400e2863c59b94a4b4eaa625d3d10361dd2604aaeddfa208d6330b0dbf16"
+    },
+    "prime/2.15.2-a4468de-head": {
+      "chart": "43ccf6b793fab191ccff11b6d0535e2f501678f7d39b2d0ec49b5a7103573de2",
+      "digest": "fcb72f1930955207b6be175e8cd49e4f6c08633dbcc91ab8f3c40202900d1770"
     },
     "prime/2.15.2-a89c542-head": {
       "chart": "43ccf6b793fab191ccff11b6d0535e2f501678f7d39b2d0ec49b5a7103573de2",
@@ -6043,6 +6099,10 @@
     "prime/2.15.2-d0a4647-head": {
       "chart": "862b3634462b29d7e0e7e72eb8b4e09f14f74fd38768a5f06c50134eb80a5322",
       "digest": "9195f654930166e7f49ffc5d9d9b7840caaf15de729c4423e22647d518e927b9"
+    },
+    "prime/2.15.2-d0bc0d0-head": {
+      "chart": "43ccf6b793fab191ccff11b6d0535e2f501678f7d39b2d0ec49b5a7103573de2",
+      "digest": "624b7f8d75427caf81f10a54e746e2e95c62a7955d6730594827341175cc27eb"
     },
     "prime/2.15.2-d0da858-head": {
       "chart": "862b3634462b29d7e0e7e72eb8b4e09f14f74fd38768a5f06c50134eb80a5322",
@@ -6060,6 +6120,14 @@
       "chart": "476259903f09ad6d49d9bd6290cc8b259350683e00961dd1c961367ad64e7ea3",
       "digest": "4c9d397ed94c365d448b3fca6dad5d1a57ec0b4f7439bf133053ca12be91966a"
     },
+    "prime/2.16.0-1fb3266-head": {
+      "chart": "769e3291a1c4677f51e3c5902c6b56343d48ab7dbc4ec8203d73c38a81eb1fb2",
+      "digest": "76d86a5bce247f3bd10d1f43e43988247145804dc6f1664cbdca34598aee37b2"
+    },
+    "prime/2.16.0-40cc695-head": {
+      "chart": "769e3291a1c4677f51e3c5902c6b56343d48ab7dbc4ec8203d73c38a81eb1fb2",
+      "digest": "a7c87f34a3e73b984287e332cf00366a7da66d156c7688bb0706269b4f4c5443"
+    },
     "prime/2.16.0-622b935-head": {
       "chart": "769e3291a1c4677f51e3c5902c6b56343d48ab7dbc4ec8203d73c38a81eb1fb2",
       "digest": "8fc8c737c00a7f067e333b8918856414218588a614942ef4569580889c55ff91"
@@ -6071,6 +6139,10 @@
     "prime/2.16.0-c033dc5-head": {
       "chart": "769e3291a1c4677f51e3c5902c6b56343d48ab7dbc4ec8203d73c38a81eb1fb2",
       "digest": "aa01a11c60377e87614109a41d1bf7c5f61f0dbc25c97589adf89588dba6d8fd"
+    },
+    "prime/2.16.0-ee34c75-head": {
+      "chart": "769e3291a1c4677f51e3c5902c6b56343d48ab7dbc4ec8203d73c38a81eb1fb2",
+      "digest": "6d3028b5da609e3ab81665f5de782d067da681c0055363d8b0c109cc427ffd4e"
     },
     "prime/2.2.0-alpha2": {
       "digest": "8b531e9032115317018ac922614980e7a6ee8073a604f4532c41f025f80471f6",
